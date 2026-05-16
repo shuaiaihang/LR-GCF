@@ -1,0 +1,40 @@
+name: gcf_unet_r50
+
+include:
+  - ../_datasets/acdc_224.yaml
+  - ../_models/unet_tf_r50.yaml
+  - ../_trainers/gcf.yaml
+
+dataset:
+  name: acdc
+  kwargs:
+    labeled_bs: 4
+    batch_size: 8
+    train_transforms:
+      - name: RandomGenerator
+        kwargs: { output_size: [ 256,256 ], p_flip: 0.5, p_rot: 0.5} # Remove random rotation
+      - name: ToRGB
+      - name: RandomCrop
+        kwargs: { size: [ 256,256 ] }
+      - name: RandomFlip
+        kwargs: { p: 0 }
+      - name: ColorJitter
+        kwargs: { brightness: 0.4, contrast: 0.4, saturation: 0.4, hue: 0.1, p: 0.5 }
+
+train:
+  name: GCFTrainer
+  kwargs:
+    labeled_bs: 4
+    consistency: 0.5
+    consistency_rampup: 100.0  # max_iter // 100
+    max_iter: 10000
+
+model:
+  name: UNetTF
+  kwargs:
+    contrast_embed: True
+
+scheduler:
+  name: PolyLR
+  kwargs:
+    max_iters: 10000
